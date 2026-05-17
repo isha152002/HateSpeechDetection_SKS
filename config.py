@@ -19,4 +19,4 @@ PATIENCE=3
 
 #-----LOSS------
 APLHA=0.7
-ALPHA=0.3
+BETA=0.3
