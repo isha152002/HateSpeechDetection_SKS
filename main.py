@@ -1,11 +1,10 @@
 import torch
-from model.input_layer import InputLayer
+from model.expert import ExpertLayer
 
-layer = InputLayer()
+expert = ExpertLayer()
 
-# fake batch of 2 tweets
-glove = torch.zeros(2, 128, 300)      # batch=2, seq=128, glove_dim=300
-categories = torch.zeros(2, 128).long()  # batch=2, seq=128
+# fake batch of 2 tweets, 128 tokens, 400 dims
+x = torch.zeros(2, 128, 400)
 
-output = layer(glove, categories)
+output = expert(x)
 print('Output shape:', output.shape)
