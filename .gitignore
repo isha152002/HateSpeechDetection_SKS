@@ -1,6 +1,5 @@
 data/
 checkpoints/
-*.txt
 *.csv
 *.parquet
 __pycache__/
