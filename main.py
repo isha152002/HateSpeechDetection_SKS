@@ -1,8 +1,8 @@
 import torch
-from model.mmoe import Mmoe
+from model.task_heads import TaskHead
 
-mmoe = Mmoe()
-x = torch.zeros(2, 128, 400)
-task0, task1 = mmoe(x)
-print('Task 0 shape:', task0.shape)
-print('Task 1 shape:', task1.shape)
+head = TaskHead()
+x = torch.zeros(2, 800)
+output = head(x)
+print('Output shape:', output.shape)
+print('Output values:', output)
