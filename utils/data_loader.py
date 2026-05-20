@@ -27,21 +27,18 @@ import numpy as np
 
 
 def load_glove(filepath):
-    """
-    Load GloVe embeddings from text file into a dictionary.
-    Args:
-        filepath: path to glove.840B.300d.txt (2.2GB file)
-    Returns:
-        dict: {word: np.array of shape (300,)}
-
-    """
-    glove_embeddings={}
-    with open(filepath, 'r',encoding='utf-8') as f:
+    glove_embeddings = {}
+    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
         for line in f:
             parts = line.split()
+            if len(parts) != 301:
+                continue
             word = parts[0]
-            vector = np.array(parts[1:],dtype=np.float32)
-            glove_embeddings[word] = vector
+            try:
+                vector = np.array(parts[1:], dtype=np.float32)
+                glove_embeddings[word] = vector
+            except ValueError:
+                continue
     return glove_embeddings
 
 
