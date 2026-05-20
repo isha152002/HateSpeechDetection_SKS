@@ -1,8 +1,14 @@
 import torch
-from model.task_heads import TaskHead
+from model.sks_model import SksModel
 
-head = TaskHead()
-x = torch.zeros(2, 800)
-output = head(x)
-print('Output shape:', output.shape)
-print('Output values:', output)
+model = SksModel()
+
+# fake batch of 2 tweets
+glove = torch.zeros(2, 128, 300)
+categories = torch.zeros(2, 128).long()
+
+hate_pred, sentiment_pred = model(glove, categories)
+print('Hate pred shape:', hate_pred.shape)
+print('Sentiment pred shape:', sentiment_pred.shape)
+print('Hate pred values:', hate_pred)
+print('Sentiment pred values:', sentiment_pred)
