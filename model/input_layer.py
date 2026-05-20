@@ -5,7 +5,7 @@ import torch.nn as nn
 class InputLayer(nn.Module):
     def __init__(self):
         super().__init__()
-        self.category_embedding = nn.Embedding(num_embeddings=2,embedding_dim=CATEGORY_EMB_DIM)
+        self.category_embedding = nn.Embedding(num_embeddings=2,embedding_dim=CATEGORY_EMB_DIM) #learned vector
 
     def forward(self, glove_tensor, category_tensor):
         cat_emb = self.category_embedding(category_tensor)

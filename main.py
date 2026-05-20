@@ -1,10 +1,8 @@
 import torch
-from model.expert import ExpertLayer
+from model.mmoe import Mmoe
 
-expert = ExpertLayer()
-
-# fake batch of 2 tweets, 128 tokens, 400 dims
+mmoe = Mmoe()
 x = torch.zeros(2, 128, 400)
-
-output = expert(x)
-print('Output shape:', output.shape)
+task0, task1 = mmoe(x)
+print('Task 0 shape:', task0.shape)
+print('Task 1 shape:', task1.shape)

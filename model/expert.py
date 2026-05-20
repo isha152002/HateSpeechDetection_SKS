@@ -20,4 +20,4 @@ class ExpertLayer(nn.Module):
         x=self.ffn(x)
         max_pool = torch.max(x, dim=1).values   # [batch, 400]
         avg_pool = torch.mean(x, dim=1)         # [batch, 400]
-        return torch.cat([max_pool, avg_pool], dim=-1)
+        return torch.cat([max_pool, avg_pool], dim=-1) #[batch,800]
