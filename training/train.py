@@ -1,5 +1,6 @@
 import torch
 from torch.optim import RMSprop
+import torch.nn as nn
 from config import LEARNING_RATE, EPOCHS, PATIENCE
 from training.loss import combined_loss
 
@@ -46,7 +47,9 @@ def train(model, hate_loader, sentiment_loader, val_loader):
 
                 hate_pred, _ = model(glove, categories)
                 # compute val loss — only hate speech task on validation
-                val_loss += combined_loss(hate_pred, labels, hate_pred, labels).item()
+                criterion = nn.BCELoss()
+                hate_pred_sq = hate_pred.squeeze(1)
+                val_loss += criterion(hate_pred_sq, labels.float()).item()
 
             print(f'Epoch {epoch+1}/{EPOCHS} — Val Loss: {val_loss:.4f}')
             # early stopping check
