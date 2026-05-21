@@ -1,6 +1,8 @@
 import torch
 from torch.optim import RMSprop
 import torch.nn as nn
+from sklearn.metrics import f1_score
+import numpy as np
 from config import LEARNING_RATE, EPOCHS, PATIENCE
 from training.loss import combined_loss
 
@@ -9,7 +11,7 @@ def train(model, hate_loader, sentiment_loader, val_loader):
     model = model.to(device) #move model to GPU
     optimizer = RMSprop(model.parameters(), lr=LEARNING_RATE)
     
-    best_val_loss = float('inf')  # infinity — any loss will be lower
+    best_val_f1 = 0.0  # higher is better for F1
     patience_counter = 0
     
     for epoch in range(EPOCHS):
@@ -38,28 +40,30 @@ def train(model, hate_loader, sentiment_loader, val_loader):
             optimizer.step()
         
         model.eval()
-        with torch.no_grad():  # don't compute gradients during validation
-            # validation loop — compute val loss
-            val_loss=0
+        with torch.no_grad():
+            all_preds = []
+            all_labels = []
+    
             for glove, categories, labels in val_loader:
                 glove = glove.to(device)
                 categories = categories.to(device)
                 labels = labels.to(device)
-
+        
                 hate_pred, _ = model(glove, categories)
-                # compute val loss — only hate speech task on validation
-                criterion = nn.BCELoss()
-                hate_pred_sq = hate_pred.squeeze(1)
-                val_loss += criterion(hate_pred_sq, labels.float()).item()
-
-            print(f'Epoch {epoch+1}/{EPOCHS} — Val Loss: {val_loss:.4f}')
-            # early stopping check
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
+                preds = (hate_pred.squeeze(1) >= 0.5).long()
+        
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+    
+            val_f1 = f1_score(all_labels, all_preds, average='weighted')
+            print(f'Epoch {epoch+1}/{EPOCHS} — Val F1: {val_f1:.4f}')
+    
+            if val_f1 > best_val_f1:
+                best_val_f1 = val_f1
                 patience_counter = 0
-                torch.save(model.state_dict(), 'checkpoints/best_model.pt')  # save best model
+                torch.save(model.state_dict(), 'checkpoints/best_model.pt')
             else:
                 patience_counter += 1
                 if patience_counter >= PATIENCE:
-                    print(f'Early stopping at epoch {epoch}')
+                    print(f'Early stopping at epoch {epoch+1}')
                     break
