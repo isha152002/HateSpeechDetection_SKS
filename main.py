@@ -3,6 +3,7 @@ from utils.dictionary import load_dictionary
 from model.sks_model import SksModel
 from training.train import train
 from evaluation.evaluate import evaluate
+from torch.utils.data import ConcatDataset
 
 GLOVE_PATH      = 'data/raw/glove.840B.300d.txt'
 DICT_PATH       = 'data/raw/derogatory_dictionary.csv'
@@ -20,6 +21,10 @@ semeval_train_dataset=HateSpeechDataset(SEMEVAL_PATH,glove_emb, dictionary,'seme
 semeval_val_dataset=HateSpeechDataset(SEMEVAL_VAL,glove_emb, dictionary,'semeval')
 semeval_test_dataset=HateSpeechDataset(SEMEVAL_TEST,glove_emb, dictionary,'semeval')
 sentiment_dataset=SentimentDataset(SENTIMENT_PATH,glove_emb, dictionary)
+
+davidson_ds = HateSpeechDataset(DAVIDSON_PATH, glove_emb, dictionary, 'davidson')
+combined_hate_ds = ConcatDataset([semeval_train_ds, davidson_ds])
+combined_hate_loader = create_dataloader(combined_hate_ds, shuffle=True)
 
 davidson_loader = create_dataloader(davidson_dataset, shuffle=True)
 semeval_loader = create_dataloader(semeval_train_dataset, shuffle=True)
