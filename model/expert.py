@@ -16,8 +16,10 @@ class ExpertLayer(nn.Module):
         )
 
     def forward(self,x):
-        x,_=self.attention(x,x,x)
-        x=self.ffn(x)
-        max_pool = torch.max(x, dim=1).values   # [batch, 400]
-        avg_pool = torch.mean(x, dim=1)         # [batch, 400]
-        return torch.cat([max_pool, avg_pool], dim=-1) #[batch,800]
+        # use torch.backends to fix compatibility issue
+        with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False):
+            x, _ = self.attention(x, x, x)
+        x = self.ffn(x)
+        max_pool = torch.max(x, dim=1).values
+        avg_pool = torch.mean(x, dim=1)
+        return torch.cat([max_pool, avg_pool], dim=-1)
