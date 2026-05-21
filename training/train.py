@@ -34,6 +34,7 @@ def train(model, hate_loader, sentiment_loader, val_loader):
             _, sentiment_pred =model(glove_s,categories_s)
             loss = combined_loss(hate_pred, hate_labels, sentiment_pred, sentiment_labels)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
         
         model.eval()
