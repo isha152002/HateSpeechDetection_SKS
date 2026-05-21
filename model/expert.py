@@ -17,7 +17,7 @@ class ExpertLayer(nn.Module):
 
     def forward(self,x):
         # use torch.backends to fix compatibility issue
-        with torch.backends.cuda.sdp_kernel(enable_flash=False, enable_math=True, enable_mem_efficient=False):
+        with torch.nn.attention.sdpa_kernel(torch.nn.attention.SDPBackend.MATH):
             x, _ = self.attention(x, x, x)
         x = self.ffn(x)
         max_pool = torch.max(x, dim=1).values
