@@ -4,6 +4,8 @@ from config import LEARNING_RATE, EPOCHS, PATIENCE
 from training.loss import combined_loss
 
 def train(model, hate_loader, sentiment_loader, val_loader):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device) #move model to GPU
     optimizer = RMSprop(model.parameters(), lr=LEARNING_RATE)
     
     best_val_loss = float('inf')  # infinity — any loss will be lower
@@ -16,9 +18,15 @@ def train(model, hate_loader, sentiment_loader, val_loader):
         for (hate_batch, sentiment_batch) in zip(hate_loader, sentiment_loader):
             # unpack hate batch
             glove, categories, hate_labels = hate_batch
+            glove = glove.to(device)
+            categories = categories.to(device)
+            hate_labels = hate_labels.to(device)
             
             # unpack sentiment batch
             glove_s, categories_s, sentiment_labels = sentiment_batch
+            glove_s = glove_s.to(device)
+            categories_s = categories_s.to(device)
+            sentiment_labels = sentiment_labels.to(device)
             
             optimizer.zero_grad()
             hate_pred, _=model(glove,categories)
@@ -32,6 +40,10 @@ def train(model, hate_loader, sentiment_loader, val_loader):
             # validation loop — compute val loss
             val_loss=0
             for glove, categories, labels in val_loader:
+                glove = glove.to(device)
+                categories = categories.to(device)
+                labels = labels.to(device)
+
                 hate_pred, _ = model(glove, categories)
                 # compute val loss — only hate speech task on validation
                 val_loss += combined_loss(hate_pred, labels, hate_pred, labels).item()

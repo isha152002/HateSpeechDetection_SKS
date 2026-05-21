@@ -2,13 +2,19 @@ import torch
 from sklearn.metrics import accuracy_score, f1_score
 
 def evaluate(model, test_loader):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+
     model.eval()
     all_preds = []
     all_labels = []
     
     with torch.no_grad():
         for glove, categories, labels in test_loader:
-            # YOUR CODE:
+            glove = glove.to(device)
+            categories = categories.to(device)
+            labels = labels.to(device)
+            
             hate_pred,_= model(glove,categories)
             preds = (hate_pred.squeeze(1) >= 0.5).long()
             
