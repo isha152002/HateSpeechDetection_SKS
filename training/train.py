@@ -20,20 +20,16 @@ def train(model, hate_loader, sentiment_loader, val_loader):
         # alternate between hate speech and sentiment batches
         for (hate_batch, sentiment_batch) in zip(hate_loader, sentiment_loader):
             # unpack hate batch
-            glove, categories, hate_labels = hate_batch
-            glove = glove.to(device)
-            categories = categories.to(device)
+            tweets, word_category_ids, hate_labels = hate_batch
             hate_labels = hate_labels.to(device)
             
             # unpack sentiment batch
-            glove_s, categories_s, sentiment_labels = sentiment_batch
-            glove_s = glove_s.to(device)
-            categories_s = categories_s.to(device)
+            tweets_s, word_category_ids_s, sentiment_labels = sentiment_batch
             sentiment_labels = sentiment_labels.to(device)
             
             optimizer.zero_grad()
-            hate_pred, _=model(glove,categories)
-            _, sentiment_pred =model(glove_s,categories_s)
+            hate_pred, _=model(tweets, word_category_ids)
+            _, sentiment_pred =model(tweets_s, word_category_ids_s)
             loss = combined_loss(hate_pred, hate_labels, sentiment_pred, sentiment_labels)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -44,12 +40,11 @@ def train(model, hate_loader, sentiment_loader, val_loader):
             all_preds = []
             all_labels = []
     
-            for glove, categories, labels in val_loader:
-                glove = glove.to(device)
-                categories = categories.to(device)
+            for tweets_v, word_category_ids_v, labels in val_loader:
+                
                 labels = labels.to(device)
         
-                hate_pred, _ = model(glove, categories)
+                hate_pred, _ = model(tweets_v, word_category_ids_v)
                 preds = (hate_pred.squeeze(1) >= 0.5).long()
         
                 all_preds.extend(preds.cpu().numpy())
