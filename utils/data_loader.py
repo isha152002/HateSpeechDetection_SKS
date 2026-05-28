@@ -5,45 +5,34 @@ Handles loading, preprocessing and batching of all three datasets:
   - HateSpeechDataset: SemEval-2019 (parquet) and Davidson (csv)
   - SentimentDataset:  Kaggle Twitter Sentiment (csv)
 
-Each dataset returns per sample:
-  - glove_tensor:    [128 x 300] float32  — GloVe word vectors, padded/truncated
-  - category_tensor: [128]       long     — 0=non-toxic, 1=toxic per token
-  - label_tensor:    scalar      long     — ground truth label (0 or 1)
+V3 change: GloVe lookup removed. Each sample now returns:
+  - tweet:        str              — cleaned tweet string (tokenised by RoBERTa in input_layer)
+  - category_ids: list of int      — word-level toxicity tags (0=non-toxic, 1=toxic)
+                                     assigned before RoBERTa tokenisation so dictionary
+                                     lookup works on whole words, not subword tokens
+  - label:        int              — ground truth label (0 or 1)
+
+Note: category_ids are word-level. Alignment to RoBERTa subword tokens
+      happens in input_layer.py using tokeniser.word_ids()
 
 Usage:
-  glove_emb = load_glove('data/raw/glove.840B.300d.txt')
   derog_dict = load_dictionary('data/raw/derogatory_dictionary.csv')
-  dataset = HateSpeechDataset('data/raw/davidson.csv', glove_emb, derog_dict, 'davidson')
+  dataset = HateSpeechDataset('data/raw/davidson.csv', derog_dict, 'davidson')
   loader  = create_dataloader(dataset, shuffle=True)
 """
 
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import torch
-from utils.preprocessing import clean_tweet
+from utils.preprocessing import clean_tweet_v3
 from utils.dictionary import get_category
 from config import MAX_SEQ_LEN,BATCH_SIZE
 import numpy as np
 
 
-def load_glove(filepath):
-    glove_embeddings = {}
-    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-        for line in f:
-            parts = line.split()
-            if len(parts) != 301:
-                continue
-            word = parts[0]
-            try:
-                vector = np.array(parts[1:], dtype=np.float32)
-                glove_embeddings[word] = vector
-            except ValueError:
-                continue
-    return glove_embeddings
-
 
 class HateSpeechDataset(Dataset):
-    def __init__(self,filepath,glove_embeddings,derogatory_dict,dataset_type):
+    def __init__(self,filepath,derogatory_dict,dataset_type):
         self.dataset_type=dataset_type
         if dataset_type=="semeval":
             df=pd.read_parquet(filepath)
@@ -57,112 +46,52 @@ class HateSpeechDataset(Dataset):
             # class 0 = hate → label 1
             # class 1,2 = not hate → label 0
 
-        self.glove_embeddings=glove_embeddings
+        
         self.derogatory_dict=derogatory_dict
         self.tweets=[]
+        self.category_ids=[]
         self.labels=[]
 
         for tweet, label in zip(texts, labels):
-            self.tweets.append(clean_tweet(tweet))
+            cleaned=clean_tweet_v3(tweet)
+            words=cleaned.split()
+            word_cats = [1 if get_category(w, self.derogatory_dict) == "C1" else 0 for w in words]
+            self.tweets.append(cleaned)
+            self.category_ids.append(word_cats)
             self.labels.append(label)
 
 
     def __len__(self):
         return len(self.tweets)
     
-    def __getitem__(self,idx): # Convert a cleaned tweet string into model-ready tensors.
-        tweet= self.tweets[idx]
-        label=self.labels[idx]
-
-        #step1: tokenise
-        tokens=tweet.split()
-
-        #step2: glove lookup per token
-        glove_vectors=[]
-        category_ids=[]
-
-        for token in tokens:
-            if token in self.glove_embeddings:
-                glove_vectors.append(self.glove_embeddings[token])
-            else:
-                glove_vectors.append(np.zeros(300,dtype=np.float32))
-
-            #category lookup
-            category=get_category(token,self.derogatory_dict)
-            category_ids.append(0 if category=="C0" else 1)
-
-        #step3: pad or truncate to 128
-        # truncate if too long
-        glove_vectors = glove_vectors[:MAX_SEQ_LEN]
-        category_ids = category_ids[:MAX_SEQ_LEN]
-
-        # pad if too short
-        while len(glove_vectors) < MAX_SEQ_LEN:
-            glove_vectors.append(np.zeros(300, dtype=np.float32))
-            category_ids.append(0)  # pad category with C0
-
-        # Step 4: convert to tensors
-        glove_tensor = torch.tensor(np.array(glove_vectors), dtype=torch.float32)
-        category_tensor = torch.tensor(category_ids, dtype=torch.long)
-        label_tensor = torch.tensor(label, dtype=torch.long)
-
-        return glove_tensor, category_tensor, label_tensor
+    def __getitem__(self,idx): 
+        return self.tweets[idx], self.category_ids[idx], self.labels[idx]
 
 
 class SentimentDataset(Dataset):
-    def __init__(self,filepath,glove_embeddings,derogatory_dict):
+    def __init__(self,filepath,derogatory_dict):
         df=pd.read_csv(filepath)
         texts=df['tweet'].tolist()
         labels=df['label'].tolist()
-        self.glove_embeddings=glove_embeddings
         self.derogatory_dict=derogatory_dict
         self.tweets=[]
+        self.category_ids = []
         self.labels=[]
 
         for tweet, label in zip(texts, labels):
-            self.tweets.append(clean_tweet(tweet))
+            cleaned = clean_tweet_v3(tweet)
+            words = cleaned.split()
+            word_cats = [1 if get_category(w, self.derogatory_dict) == "C1" else 0 for w in words]
+            self.tweets.append(cleaned)
+            self.category_ids.append(word_cats)
             self.labels.append(label)
 
     def __len__(self):
         return len(self.tweets)
     
     def __getitem__(self,idx):
-        tweet= self.tweets[idx]
-        label=self.labels[idx]
 
-        #step1: tokenise
-        tokens=tweet.split()
-
-        #step2: glove lookup per token
-        glove_vectors=[]
-        category_ids=[]
-
-        for token in tokens:
-            if token in self.glove_embeddings:
-                glove_vectors.append(self.glove_embeddings[token])
-            else:
-                glove_vectors.append(np.zeros(300,dtype=np.float32))
-
-            #category lookup
-            category=get_category(token,self.derogatory_dict)
-            category_ids.append(0 if category=="C0" else 1)
-
-        #step3: pad or truncate to 128
-        # truncate if too long
-        glove_vectors = glove_vectors[:MAX_SEQ_LEN]
-        category_ids = category_ids[:MAX_SEQ_LEN]
-
-        # pad if too short
-        while len(glove_vectors) < MAX_SEQ_LEN:
-            glove_vectors.append(np.zeros(300, dtype=np.float32))
-            category_ids.append(0)  # pad category with C0
-
-        # Step 4: convert to tensors
-        glove_tensor = torch.tensor(np.array(glove_vectors), dtype=torch.float32)
-        category_tensor = torch.tensor(category_ids, dtype=torch.long)
-        label_tensor = torch.tensor(label, dtype=torch.long)
-
-        return glove_tensor, category_tensor, label_tensor
+        return self.tweets[idx], self.category_ids[idx], self.labels[idx]
 
 def create_dataloader(dataset, shuffle=True):
     """
