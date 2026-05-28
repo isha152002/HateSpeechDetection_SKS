@@ -17,7 +17,7 @@ class InputLayer(nn.Module):
 
         # STEP 1: tokenise the batch
         encoding = self.tokeniser(
-            tweets,
+            list(tweets),
             max_length=MAX_SEQ_LEN,
             padding='max_length',
             truncation=True,
@@ -28,6 +28,8 @@ class InputLayer(nn.Module):
         attention_mask = encoding['attention_mask'].to(device)  # [batch, 128]
 
         # STEP 2: align word-level category IDs to RoBERTa subword tokens
+        if hasattr(word_category_ids, 'tolist'):
+            word_category_ids = word_category_ids.tolist()
         batch_token_cats = []
         for i, word_cats in enumerate(word_category_ids):
             word_ids = encoding.word_ids(batch_index=i)
