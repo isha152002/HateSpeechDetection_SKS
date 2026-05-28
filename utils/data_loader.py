@@ -75,7 +75,7 @@ class HateSpeechDataset(Dataset):
 
         # convert to tensor so DataLoader can batch correctly
         word_cats_tensor = torch.tensor(word_cats, dtype=torch.long)
-        return tweet, word_cats, label
+        return tweet, word_cats_tensor, label
 
 
 class SentimentDataset(Dataset):
@@ -110,7 +110,7 @@ class SentimentDataset(Dataset):
 
         # convert to tensor so DataLoader can batch correctly
         word_cats_tensor = torch.tensor(word_cats, dtype=torch.long)
-        return tweet, word_cats, label
+        return tweet, word_cats_tensor, label
 
 def create_dataloader(dataset, shuffle=True):
     """
