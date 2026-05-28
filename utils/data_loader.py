@@ -72,6 +72,9 @@ class HateSpeechDataset(Dataset):
         # pad or truncate word_cats to MAX_SEQ_LEN
         word_cats = word_cats[:MAX_SEQ_LEN]
         word_cats = word_cats + [0] * (MAX_SEQ_LEN - len(word_cats))
+
+        # convert to tensor so DataLoader can batch correctly
+        word_cats_tensor = torch.tensor(word_cats, dtype=torch.long)
         return tweet, word_cats, label
 
 
@@ -104,6 +107,9 @@ class SentimentDataset(Dataset):
         # pad or truncate word_cats to MAX_SEQ_LEN
         word_cats = word_cats[:MAX_SEQ_LEN]
         word_cats = word_cats + [0] * (MAX_SEQ_LEN - len(word_cats))
+
+        # convert to tensor so DataLoader can batch correctly
+        word_cats_tensor = torch.tensor(word_cats, dtype=torch.long)
         return tweet, word_cats, label
 
 def create_dataloader(dataset, shuffle=True):
