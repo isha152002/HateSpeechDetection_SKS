@@ -11,7 +11,7 @@ FFN_UNITS=INPUT_DIM # 868 — matches input dim, no bottleneck
 EXPERT_OUT_DIM = INPUT_DIM * 2 # 1736 after dual pooling(max+avg)
 
 #-------TRAINING-------
-BATCH_SIZE=512
+BATCH_SIZE=64
 LEARNING_RATE=0.0001
 DROPOUT=0.1
 EPOCHS=30
