@@ -10,12 +10,10 @@ def evaluate(model, test_loader):
     all_labels = []
     
     with torch.no_grad():
-        for glove, categories, labels in test_loader:
-            glove = glove.to(device)
-            categories = categories.to(device)
+        for tweets, word_category_ids, labels in test_loader:
             labels = labels.to(device)
             
-            hate_pred,_= model(glove,categories)
+            hate_pred,_= model(tweets, word_category_ids)
             preds = (hate_pred.squeeze(1) >= 0.5).long()
             
             all_preds.extend(preds.cpu().numpy())
