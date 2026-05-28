@@ -65,7 +65,14 @@ class HateSpeechDataset(Dataset):
         return len(self.tweets)
     
     def __getitem__(self,idx): 
-        return self.tweets[idx], self.category_ids[idx], self.labels[idx]
+        tweet = self.tweets[idx]
+        word_cats = self.category_ids[idx]
+        label = self.labels[idx]
+
+        # pad or truncate word_cats to MAX_SEQ_LEN
+        word_cats = word_cats[:MAX_SEQ_LEN]
+        word_cats = word_cats + [0] * (MAX_SEQ_LEN - len(word_cats))
+        return tweet, word_cats, label
 
 
 class SentimentDataset(Dataset):
@@ -90,8 +97,14 @@ class SentimentDataset(Dataset):
         return len(self.tweets)
     
     def __getitem__(self,idx):
+        tweet = self.tweets[idx]
+        word_cats = self.category_ids[idx]
+        label = self.labels[idx]
 
-        return self.tweets[idx], self.category_ids[idx], self.labels[idx]
+        # pad or truncate word_cats to MAX_SEQ_LEN
+        word_cats = word_cats[:MAX_SEQ_LEN]
+        word_cats = word_cats + [0] * (MAX_SEQ_LEN - len(word_cats))
+        return tweet, word_cats, label
 
 def create_dataloader(dataset, shuffle=True):
     """
