@@ -1,13 +1,13 @@
 from config import CATEGORY_EMB_DIM, MAX_SEQ_LEN
-from transformers import RobertaModel, RobertaTokenizerFast
+from transformers import AutoTokenizer, AutoModel
 import torch
 import torch.nn as nn
 
 class InputLayer(nn.Module):
     def __init__(self):
         super().__init__()
-        self.tokeniser = RobertaTokenizerFast.from_pretrained('cardiffnlp/twitter-roberta-base')
-        self.roberta = RobertaModel.from_pretrained('cardiffnlp/twitter-roberta-base')
+        self.tokeniser = AutoTokenizer.from_pretrained('cardiffnlp/twitter-roberta-base')
+        self.roberta   = AutoModel.from_pretrained('cardiffnlp/twitter-roberta-base')
         self.roberta.requires_grad_(False)  # frozen — don't update RoBERTa weights
         self.category_embedding = nn.Embedding(num_embeddings=2, embedding_dim=CATEGORY_EMB_DIM)  # learned vector
 
